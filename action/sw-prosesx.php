@@ -1,0 +1,1475 @@
+<?php
+
+ session_start();
+    require_once'../library/sw-config.php'; 
+    require_once'../library/sw-function.php';
+    require_once'../mod/out/sw-cookies.php';
+    $ip_login  = $_SERVER['REMOTE_ADDR'];
+    $time_login = date('Y-m-d H:i:s');
+    $iB = getBrowser();
+    $browser = $iB['name'].'-'.$iB['version'];
+    $allowed_ext = array("png", "jpg", "jpeg");
+    //$created_cookies = rand(19999,9999).rand(888888,111111).date('ymdhisss');
+    $salt = '$%DEf0&TTd#%dSuTyr47542"_-^@#&*!=QxR094{a911}+';
+
+    // $expired_cookie = time()+60*60*24*7;
+    $expired_cookie = time()+60*60*24*30;
+    
+    //deteksi akhir pekan
+    $d = date("d");
+    $bulan  = date ("m");
+    $hari       = date("d");
+    $tahun      = date("Y");
+    $jumlahhari = date("t",mktime(0,0,0,$bulan,$hari,$tahun));
+    $Gjabatan = 0;
+    
+    //akhir
+    
+    $idTRX = $row_user['id'];
+    
+    $query_absen="SELECT * FROM system";
+        $result_absen = $connection->query($query_absen);
+        if($result_absen->num_rows > 0){
+             while ($row_absen= $result_absen->fetch_assoc()) {
+                  $latitudexy = $row_absen['latitude'];
+                  $longitudexy = $row_absen['longitude'];
+             }
+        }
+        
+         $query_absen="SELECT * FROM employees WHERE id = $idTRX";
+        $result_absen = $connection->query($query_absen);
+        if($result_absen->num_rows > 0){
+             while ($row_absen= $result_absen->fetch_assoc()) {
+                 $DTShift = $row_absen['shift_id'];
+                 $DTBuild = $row_absen['building_id'];
+             }
+        }
+        
+        $query_absen="SELECT * FROM shift WHERE shift_id = $DTShift";
+        $result_absen = $connection->query($query_absen);
+        if($result_absen->num_rows > 0){
+             while ($row_absen= $result_absen->fetch_assoc()) {
+                 $TMMasuk = $row_absen['time_in'];
+                 $TMPulang = $row_absen['time_out'];
+             }
+        }
+        
+        $query_absen="SELECT * FROM building WHERE building_id = $DTBuild";
+        $result_absen = $connection->query($query_absen);
+        if($result_absen->num_rows > 0){
+             while ($row_absen= $result_absen->fetch_assoc()) {
+                //  $Tilok1 = $row_absen['time_in'];
+                //  $Tilok2 = $row_absen['time_out'];
+                  $latitudexy = $row_absen['latitude'];
+                  $longitudexy = $row_absen['longitude'];
+                  $LockCityX = $row_absen['city'];
+             }
+        }
+        
+        $JJMMasuk = explode(":",$TMMasuk);
+        $JJMMasukE = $JJMMasuk[0] . "". $JJMMasuk[1];
+        $JJMPulang = explode(":",$TMPulang);
+        $JJMPulangE = $JJMPulang[0]. "" . $JJMPulang[1];
+        
+        //$JJMMasukX = substr($JJMMasuk,0,4);
+        //$JJMPulangX = substr($JJMPulang,0,4);
+        
+        $JJMMasukY = substr($JJMMasukE,0,1);
+        $JJMPulangY = substr($JJMPulangE,0,1);
+        
+        if ($JJMMasukY == 0){
+            $JJMMasukX = substr($JJMMasukE,1,3);
+        }else{
+            $JJMMasukX = substr($JJMMasukE,0,4);
+        }
+        
+        if ($JJMPulangY == 0){
+            $JJMPulangX = substr($JJMPulangE,1,3);
+        }else{
+            $JJMPulangX = substr($JJMPulangE,0,4);
+        }
+        
+        
+        
+        
+    
+
+switch (@$_GET['action']){
+
+case 'login':
+  $error = array();
+  if (empty($_POST['email'])) { 
+        $error[] = 'Email tidak boleh kosong';
+    } else { 
+      $email = mysqli_real_escape_string($connection,$_POST['email']);
+      $created_cookies =  md5($email);
+  }
+
+  if (empty($_POST['password'])) { 
+        $error[] = 'Password tidak boleh kosong';
+    } else {
+      $password = hash('sha256',$salt.$_POST['password']);
+
+  }
+
+if (empty($error)){
+    $update_user = mysqli_query($connection,"UPDATE employees SET created_login='$time_login',  created_cookies='$created_cookies' WHERE employees_password='$password'");
+
+    $query_login ="SELECT id,employees_email,employees_name,created_cookies FROM employees WHERE employees_email='$email' AND employees_password='$password'";
+    $result_login       = $connection->query($query_login);
+    $row                = $result_login->fetch_assoc();
+
+    $COOKIES_MEMBER         =  epm_encode($row['id']);
+    // var_dump(epm_encode($row['id']));
+    // die;
+    $COOKIES_COOKIES        =  $row['created_cookies'];
+      
+  $pesan = '<html lang="id-ID" xml:lang="id-ID"><body>';
+  $pesan .= 'Saat ini '.$row['employees_name'].' baru saja login<br>';
+  $pesan .= 'Detail Akun:';
+  $pesan .= 'Nama: '.$row['employees_name'].'<br>Email: '.$row['employees_email'].'<br>Ip: '.$ip_login.'<br>Tgl Login: '.$time_login.'<br>Browser: '.$browser.'<br><br><br>';
+  $pesan .= 'Hormat kami,<br>'.$site_name.'<br>Email otomatis, Mohon tidak membalas email ini';
+
+  $pesan   .= "</body></html>";
+  $to       = $row['employees_email'];
+  $subject  = ''.$row['employees_name'].' Sedang Online';
+  $headers  = "From: " . $site_name." <".$site_email_domain.">\r\n";
+  $headers .= "MIME-Version: 1.0\r\n";
+  $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+
+  if($result_login->num_rows > 0){
+    setcookie('COOKIES_MEMBER', $COOKIES_MEMBER, $expired_cookie, '/');
+      setcookie('COOKIES_COOKIES', $COOKIES_COOKIES, $expired_cookie, '/');
+      echo'success';
+      setcookie('COOKIES_MEMBER', $COOKIES_MEMBER, $expired_cookie, '/');
+      setcookie('COOKIES_COOKIES', $COOKIES_COOKIES, $expired_cookie, '/');
+  }
+  else {
+    echo'Email dan password yang Anda masukkan salah!';
+    }
+  }
+
+  else{       
+  	echo'Bidang inputan tidak boleh ada yang kosong!';
+  }
+
+break;
+
+/* ------------- REGISTRASI ---------------*/
+case 'registrasi':
+
+$query = mysqli_query($connection, "SELECT max( employees_code) as kodeTerbesar FROM employees");
+$data = mysqli_fetch_array($query);
+$kode_karyawan = $data['kodeTerbesar'];
+$urutan = (int) substr($kode_karyawan, 3, 3);
+$urutan++;
+$huruf = "OM";
+$kode_karyawan = $huruf . sprintf("%03s", $urutan);
+$employees_code = ''.$kode_karyawan.'-'.$year.'';
+
+$error = array();
+
+  if (empty($_POST['employees_name'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $employees_name= mysqli_real_escape_string($connection, $_POST['employees_name']);
+  }
+
+  if (empty($_POST['employees_email'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $employees_email= mysqli_real_escape_string($connection, $_POST['employees_email']);
+      $created_cookies = md5($employees_email);
+  }
+
+
+  if (empty($_POST['employees_password'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $employees_password= mysqli_real_escape_string($connection,hash('sha256',$salt.$_POST['employees_password']));
+      $password_send = mysqli_real_escape_string($connection,$_POST['employees_password']);
+  }
+
+
+  if (empty($_POST['position_id'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $position_id = mysqli_real_escape_string($connection, $_POST['position_id']);
+  }
+
+  if (empty($_POST['shift_id'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $shift_id = mysqli_real_escape_string($connection, $_POST['shift_id']);
+  }
+
+  if (empty($_POST['building_id'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $building_id = mysqli_real_escape_string($connection, $_POST['building_id']);
+  }
+
+  if (empty($error)) {
+    $pesan = '<html lang="id-ID" xml:lang="id-ID"><body>';
+    $pesan .= 'Pendaftaran Akun di '.$site_name.' berhasil dengan detail sebagai berikut:';
+    $pesan .= 'Detail Akun:';
+    $pesan .= 'Nama: '.$employees_name.'<br>Email: '.$employees_email.'<br>Password: '.$password_send.'<br>Id: '.$ip.'<br>Browser: '.$browser.'';
+    $pesan .= 'Hormat kami,<br>'.$site_name.'<br>Email otomatis, Mohon tidak membalas email ini';
+    $pesan .= "</body></html>";
+    $to     = $employees_email;
+    $subject = 'Registrasi Akun Berhasil';
+    $headers = "From: ".$site_name."<".$site_email_domain.">\r\n";
+    $headers .= "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+
+if (filter_var($employees_email, FILTER_VALIDATE_EMAIL)) {
+  $query="SELECT employees_email from employees where employees_email='$employees_email'";
+  $result= $connection->query($query) or die($connection->error.__LINE__);
+  if(!$result ->num_rows >0){
+    $add ="INSERT INTO employees (employees_code,
+              employees_email,
+              employees_password,
+              employees_name,
+              position_id,
+              shift_id,
+              building_id,
+              photo,
+              created_login,
+              created_cookies) values('$employees_code',
+              '$employees_email',
+              '$employees_password',
+              '$employees_name',
+              '$position_id',
+              '$shift_id',
+              '$building_id',
+              '',
+              '$date',
+              '$created_cookies')";
+    if($connection->query($add) === false) { 
+        die($connection->error.__LINE__); 
+        echo'Data tidak berhasil disimpan!';
+    } else{
+        echo'success';
+        //mail($to, $subject, $pesan, $headers);
+    }}
+    else   {
+      echo'Sepertinya Email "'.$employees_email.'" sudah terdaftar!';
+    }}
+
+    else {
+     echo'Email yang anda masukkan salah!';
+    }}
+
+    else{           
+        echo'Bidang inputan masih ada yang kosong..!';
+    }
+break;
+
+
+/* ------------- FORGOT ---------------*/
+case 'forgot':
+  $pass="1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  $panjang_pass='8';$len=strlen($pass); 
+  $start=$len-$panjang; $xx=rand('0',$start); 
+  $yy=str_shuffle($pass);
+
+$error = array();
+
+  if (empty($_POST['employees_email'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $employees_email= mysqli_real_escape_string($connection, $_POST['employees_email']);
+  }
+
+
+  $passwordbaru = substr($yy, $xx, $panjang_pass);
+  $employees_password = mysqli_real_escape_string($connection,hash('sha256',$salt.$passwordbaru));
+
+  if (empty($error)) {
+    $pesan = '<html lang="id-ID" xml:lang="id-ID"><body>';
+    $pesan .= 'Permintaan ganti password akun Anda di '.$site_name.', dengan email '.$employees_email.' telah berhasil.<br>';
+    $pesan .= 'Password Anda: <b>'.$passwordbaru.'</b><br><br>Silakan gunakan password diatas untuk login, Anda dapat merubahnya di pengaturan akun.<br><br>';
+    $pesan .= 'Hormat kami,<br>'.$site_name.'<br>Email otomatis, Mohon tidak membalas email ini';
+    $pesan .= "</body></html>";
+    $to     = $employees_email;
+    $subject = 'Reset Password Berhasil';
+    $headers = "From: " . $site_name." <".$site_email_domain.">\r\n";
+    $headers .= "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+
+if (filter_var($employees_email, FILTER_VALIDATE_EMAIL)) {
+  $query="SELECT employees_email from employees where employees_email='$employees_email'";
+  $result= $connection->query($query) or die($connection->error.__LINE__);
+  if($result ->num_rows >0){
+    $row = $result->fetch_assoc();
+
+    $update ="UPDATE employees SET employees_password='$employees_password' WHERE employees_email='$row[employees_email]'";
+    if($connection->query($update) === false) { 
+        die($connection->error.__LINE__); 
+        echo'Penyetelan password baru gagal, silahkan nanti coba kembali!';
+    } else{
+        echo'success';
+        mail($to, $subject, $pesan, $headers);
+    }}
+    else   {
+       echo'Untuk Email "'.$email.'" belum terdaftar, silahkan cek kembali!';
+    }}
+
+    else {
+     echo'Email yang Anda masukkan salah!';
+    }}
+
+    else{           
+        echo'Bidang inputan masih ada yang kosong..!';
+    }
+break;
+
+// ------------- Absen -------------*/
+case 'present':
+$latitude = $_GET['latitude'];
+$files = $_FILES["webcam"]["name"];
+$lokasi_file = $_FILES['webcam']['tmp_name'];  
+$ukuran_file = $_FILES['webcam']['size'];
+$extension = getExtension($files);
+$extension = strtolower($extension);
+if($extension=="jpg" || $extension=="jpeg" ){$src = imagecreatefromjpeg($lokasi_file);}
+else if($extension=="png"){$src = imagecreatefrompng($lokasi_file);}
+else {$src = imagecreatefromgif($lokasi_file);}
+list($width,$height)=getimagesize($lokasi_file);
+
+$width_new  = 400;
+$height_new = 300;
+$ratio_ori  = $width / $height_new;
+$tmp=imagecreatetruecolor($width_new,$height_new);
+imagecopyresampled($tmp,$src,0,0,0,0,$width_new,$height_new,$width,$height);
+
+if (empty($_GET['latitude'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $latitude= mysqli_real_escape_string($connection, $_GET['latitude']);
+  }
+  // Cek User yang sudah login -----------------------------------------------
+  $query_u="SELECT employees.id,employees.employees_code,employees.employees_name,employees.shift_id,shift.shift_id,shift.time_in,shift.time_out FROM employees,shift WHERE employees.shift_id=shift.shift_id AND employees.id='$row_user[id]'";
+  $result_u = $connection->query($query_u);
+  if($result_u->num_rows > 0){
+      $row_u = $result_u->fetch_assoc();
+
+      // Cek data Absen Berdasarkan tanggal sekarang
+      $query  ="SELECT employees_id,time_in FROM presence WHERE employees_id='$row_u[id]' AND presence_date='$date'";
+      $result = $connection->query($query);
+      $row = $result->fetch_assoc();
+      if($result->num_rows > 0){
+        // Update Absensi Pulang
+        // var_dump($latitude);
+        // die;
+        //coba hitung jarak
+        $meter = 0;
+        $konversi =0;
+        $jarak = explode(",", $latitude);
+        $jarak1 = $jarak[0];
+        $jarak2 = $jarak[1];
+        
+        $kordinatsekolah = $latitudexy . ", " . $longitudexy;
+        $jaraksekolah = explode(',', $kordinatsekolah);
+        $jaraks1 = $jaraksekolah[0];
+        $jaraks2 = $jaraksekolah[1];
+        
+        $theta = $jarak2 - $jaraks2;
+        $dist = sin(deg2rad($jarak1)) * sin(deg2rad($jaraks1)) + cos(deg2rad($jarak1)) * cos(deg2rad($jaraks1)) * cos(deg2rad($theta));
+        $dist = acos($dist);
+        $dist = rad2deg($dist);
+        $miles = $dist * 60 * 1.1515;
+
+        $distance = ($miles * 1.609344);
+
+        $konversi = number_format($distance, 2, ',', '');
+        $km = str_replace(",", ".", $konversi);
+        $meter = (str_replace(",", ".", $konversi) * 1000);
+        
+        // var_dump($meter);
+        // die;
+        
+        //check dinas luar
+         $query_absen="SELECT * FROM pengajuan_dnl WHERE employess_id = '$row_u[id]' and tanggal = '$date'";
+        $result_absen = $connection->query($query_absen);
+        if($result_absen->num_rows > 0){
+             while ($row_absen= $result_absen->fetch_assoc()) {
+                  $pengajuan = $row_absen['pengajuan'];
+                    $akses = $row_absen['akses'];
+             }
+        }
+        
+        if ($pengajuan == '4' && $akses == '1')
+                    {
+                        if($latitude == '' || $latitude == null)
+        {
+            echo "Posisi Anda Tidak Terdeteksi, Silahkan Aktifkan GPS Dan restart Applikasi!";
+        }else
+        {
+            //$sx1 =  number_format((float)$jarak1, 14, '.', ''); 
+            //$sx2 =  number_format((float)$jarak2, 14, '.', ''); 
+            //$sx1 = strlen($jarak1);
+            //$sx2 = strlen($jarak2);
+            $sx1 = $jarak1;
+            $sx2 = $jarak2;
+            $jdx1 = strlen($sx1);
+            $jdx2 = strlen($sx2);
+            
+            //echo strlen($sx1);
+            
+            if($jdx1 > 11 || $jdx2 > 11)
+            {
+                echo "Maaf Terdeteksi Pengacauan Sistem , Akan Menjalankan Sistem Machine Learning Untuk Meninjau Data";
+                
+                 $queryx  ="SELECT * FROM employees WHERE id='$row_u[id]'";
+        $resultx = $connection->query($queryx);
+        $rowx = $resultx->fetch_assoc();
+          if($resultx->num_rows > 0){
+              $dtawalan = $rowx['employees_code'];
+              $dtakhir = 'XY-' . $dtawalan;
+          }
+          
+          $sgz = explode("-", $dtawalan);
+          
+          if ($sgz[0] == 'XY')
+          {
+              
+          }else
+          {
+            $update ="UPDATE employees SET employees_code='$dtakhir' WHERE id='$row_u[id]'";
+              if($connection->query($update) === false) { 
+                  die($connection->error.__LINE__); 
+                  echo'Sepetinya sitem kami sedang error!';
+              } else{
+                  //echo $dtakhir;
+              }  
+          }
+          
+          
+                
+                
+                
+                
+            }else
+            {
+               $query  ="SELECT time_out,employees_id FROM presence WHERE employees_id='$row_u[id]' AND presence_date='$date'";
+        $result = $connection->query($query);
+        $row = $result->fetch_assoc();
+          if($result->num_rows > 0){
+            if($row['time_out']=='00:00:00'){
+                //jika belum Jam Pulang
+                $gettimex = explode(":" , $time);
+                $gettimey = $gettimex[0];
+                $gettimez = $gettimex[1];
+                $gettimer = $gettimey .''.$gettimez;
+                
+                if ($gettimer < $JJMPulangX ){
+                    echo "Belum Waktunya Absen Pulang!, Absen Pulang Bisa Dilakukan Pukul ".$TMPulang." WIB";
+                }else
+                {
+                
+            //Update Jam Pulang
+            	$filename =''.seo_title($row_user['employees_name']).'-out-'.$date.'-'.$row_user['id'].'.jpg';
+      			$directory= "../content/present/".$filename;
+
+              $update ="UPDATE presence SET time_out='$time',picture_out='$filename' WHERE employees_id='$row_u[id]' AND presence_date='$date'";
+              if($connection->query($update) === false) { 
+                  die($connection->error.__LINE__); 
+                  echo'Sepetinya sitem kami sedang error!';
+              } else{
+                  //Jam Pulang
+                  echo'success/Selamat "'.$row_user['employees_name'].'" berhasil Absen Pulang pada Tanggal '.tanggal_ind($date).' dan Jam : '.$time.', Hati-hati dijalan saat pulang "'.$row_a['employees_name'].'"!';
+                  imagejpeg($tmp,$directory,80);
+              }
+                }
+            }
+          else{
+            echo'Sebelumnya "'.$row_user['employees_name'].'" sudah pernah Absen Pulang pada Tanggal '.tanggal_ind($date).' dan Jam '.$row['time_out'].'.!';
+          }
+        } 
+            }
+        
+        
+        
+        
+    }
+                        
+                    }else
+                    {
+                        if($latitude == '' || $latitude == null)
+        {
+            echo "Posisi Anda Tidak Terdeteksi, Silahkan Aktifkan GPS Dan restart Applikasi!";
+            
+            //jarak pulang
+        }else if ($meter >= 250000)
+        {
+            // var_dump("Anda Tidak Berada Diwilayah Absen, Jarak Anda ".$meter." Meter");
+             if ($meter > 1000)
+            {
+                echo "Anda Tidak Berada Diwilayah Absen (WFH Yaitu Max 250 KM), Jarak Anda ".($meter / 1000)." KM";
+            }else
+            {
+               echo "Anda Tidak Berada Diwilayah Absen (WFH Yaitu Max 250 KM), Jarak Anda ".$meter." Meter"; 
+            }
+            
+            
+        }else
+        {
+            //$sx1 =  number_format((float)$jarak1, 14, '.', ''); 
+            //$sx2 =  number_format((float)$jarak2, 14, '.', ''); 
+            //$sx1 = strlen($jarak1);
+            //$sx2 = strlen($jarak2);
+            $sx1 = $jarak1;
+            $sx2 = $jarak2;
+            $jdx1 = strlen($sx1);
+            $jdx2 = strlen($sx2);
+            
+            $CheckPlaces = $sx2 . ",". $sx1;
+
+            // $url = "https://api.mapbox.com/geocoding/v5/mapbox.places/$CheckPlaces.json?types=place&access_token=pk.eyJ1IjoiZnl0b2tvIiwiYSI6ImNrcms0cnI5cDBkNzYyb285M2c4Mm0xbHcifQ.cFwLjER_o_zBmvCclZrlNg";
+
+            // $curl = curl_init($url);
+            // curl_setopt($curl, CURLOPT_URL, $url);
+            // curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+            // //for debug only!
+            // curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+            // curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+
+            // $resp = curl_exec($curl);
+            // curl_close($curl);
+            // //var_dump($resp);
+
+            // $dt = json_decode($resp, TRUE);
+
+            // $city = $dt["features"][0]["text"];
+            // $Provence = $dt["features"][0]["context"][0]["text"];
+            
+            
+            if($jdx1 > 11 || $jdx2 > 11)
+            {
+                echo "Maaf Terdeteksi Pengacauan Sistem , Akan Menjalankan Sistem Machine Learning Untuk Meninjau Data";
+                
+                 $queryx  ="SELECT * FROM employees WHERE id='$row_u[id]'";
+        $resultx = $connection->query($queryx);
+        $rowx = $resultx->fetch_assoc();
+          if($resultx->num_rows > 0){
+              $dtawalan = $rowx['employees_code'];
+              $dtakhir = 'XY-' . $dtawalan;
+          }
+          
+          $sgz = explode("-", $dtawalan);
+          
+          if ($sgz[0] == 'XY')
+          {
+              
+          }else
+          {
+            $update ="UPDATE employees SET employees_code='$dtakhir' WHERE id='$row_u[id]'";
+              if($connection->query($update) === false) { 
+                  die($connection->error.__LINE__); 
+                  echo'Sepetinya sitem kami sedang error!';
+              } else{
+                  //echo $dtakhir;
+              }  
+          }
+          
+          
+                
+                
+                
+                
+            }else
+            {
+                $CLockCityX = strtolower($LockCityX);
+                // $Ccity = strtolower($city);
+                if ($CLockCityX !=""){
+
+               $query  ="SELECT time_out,employees_id FROM presence WHERE employees_id='$row_u[id]' AND presence_date='$date'";
+        $result = $connection->query($query);
+        $row = $result->fetch_assoc();
+          if($result->num_rows > 0){
+            if($row['time_out']=='00:00:00'){
+                //jika belum Jam Pulang
+                $gettimex = explode(":" , $time);
+                $gettimey = $gettimex[0];
+                $gettimez = $gettimex[1];
+                $gettimer = $gettimey .''.$gettimez;
+                $dtsx = 0;
+
+                $queryx  ="SELECT * FROM employees WHERE id='$row_u[id]'";
+                $resultx = $connection->query($queryx);
+                $rowx = $resultx->fetch_assoc();
+                  if($resultx->num_rows > 0){
+                    //$namaPegawai = $rowx[''] ;
+                    if ($rowx['position_id'] == 1){
+                        $dtsx = 1330;
+                        $infs = '13:30';
+                    }else{
+                        $dtsx = 1530;
+                        $infs = '15:30';
+                    }
+                  }
+
+
+                
+                
+                if ($gettimer < $JJMPulangX ){
+                    echo "Belum Waktunya Absen Pulang!, Absen Pulang Bisa Dilakukan Pukul ".$TMPulang." WIB";
+                }else
+                {
+                
+            //Update Jam Pulang
+            	$filename =''.seo_title($row_user['employees_name']).'-out-'.$date.'-'.$row_user['id'].'.jpg';
+      			$directory= "../content/present/".$filename;
+
+              $update ="UPDATE presence SET time_out='$time',picture_out='$filename' WHERE employees_id='$row_u[id]' AND presence_date='$date'";
+              if($connection->query($update) === false) { 
+                  die($connection->error.__LINE__); 
+                  echo'Sepetinya sitem kami sedang error!';
+              } else{
+                  //Jam Pulang
+                  echo'success/Selamat "'.$row_user['employees_name'].'" berhasil Absen Pulang pada Tanggal '.tanggal_ind($date).' dan Jam : '.$time.', Hati-hati dijalan saat pulang "'.$row_user['employees_name'].'"!';
+                  imagejpeg($tmp,$directory,80);
+              }
+                }
+            }
+          else{
+            echo'Sebelumnya "'.$row_user['employees_name'].'" sudah pernah Absen Pulang pada Tanggal '.tanggal_ind($date).' dan Jam '.$row['time_out'].'.!';
+          }
+        } 
+    }else{
+        //echo "Maaf Anda Sedang Berada Diluar Kota ($city), Harap Kembali Ke Kota Anda Yaitu $LockCityX";
+        echo "Maaf Anda Terdeteksi Berada Diwilayah $city, Harap Kembali Ke Kota Tempat Anda Bekerja Yaitu $LockCityX";
+        //echo "Maaf Anda Terdeteksi Berada Diluar Kota, Anda Sekarang Berada Dikota $city. Harap Kembali Ke Kota Tempat Bekerja Anda Yaitu $LockCityX";
+    }
+            }
+        
+        
+        
+        
+    }
+                    }
+        
+        
+        
+        
+      }else{
+        // Add Absen Masuk ---------------------------------------
+        // var_dump($latitude);
+        // die;
+        //coba hitung jarak
+        $meter = 0;
+        $konversi =0;
+        $jarak = explode(",", $latitude);
+        $jarak1 = $jarak[0];
+        $jarak2 = $jarak[1];
+        
+        $kordinatsekolah = $latitudexy . ", " . $longitudexy;
+        $jaraksekolah = explode(',', $kordinatsekolah);
+        $jaraks1 = $jaraksekolah[0];
+        $jaraks2 = $jaraksekolah[1];
+        
+        $theta = $jarak2 - $jaraks2;
+        $dist = sin(deg2rad($jarak1)) * sin(deg2rad($jaraks1)) + cos(deg2rad($jarak1)) * cos(deg2rad($jaraks1)) * cos(deg2rad($theta));
+        $dist = acos($dist);
+        $dist = rad2deg($dist);
+        $miles = $dist * 60 * 1.1515;
+
+        $distance = ($miles * 1.609344);
+
+        $konversi = number_format($distance, 2, ',', '');
+        $km = str_replace(",", ".", $konversi);
+        $meter = (str_replace(",", ".", $konversi) * 1000);
+        
+        // var_dump($meter);
+        // die;
+        
+        //check dinas luar
+        
+        $query_absen="SELECT * FROM pengajuan_dnl WHERE employess_id = '$row_u[id]' and tanggal = '$date'";
+        $result_absen = $connection->query($query_absen);
+        if($result_absen->num_rows > 0){
+             while ($row_absen= $result_absen->fetch_assoc()) {
+                  $pengajuan = $row_absen['pengajuan'];
+                    $akses = $row_absen['akses'];
+             }
+        }
+        
+        if ($pengajuan == '4' && $akses == '1')
+        {
+            if($latitude == '' || $latitude == null)
+        {
+            echo "Posisi Anda Tidak Terdeteksi, Silahkan Aktifkan GPS Dan restart Applikasi!";
+        }else
+        {
+            $gettimes = explode(":" , $time);
+                $gettimesy = $gettimes[0];
+                $gettimesz = $gettimes[1];
+                $gettimers = $gettimesy . ''. $gettimesz;
+                $dtsx = "0600";
+                
+                // if (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Tuesday") {
+                //     echo "sekarang hari selasa";
+                    
+                // }
+                // else
+                // {
+                //     echo "Bukan Hari Selasa";
+                // }
+                // if ((date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday")||date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Saturday") {
+                    
+                // }
+        //
+        if ($gettimers < 600 )
+        // if ($gettimers < 0600 )
+        {
+                    echo "Belum Waktunya Absen Masuk!, Absen Masuk Bisa Dilakukan Mulai Pukul 06:00 WIB";
+        }else
+        {
+            if ((date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday")||date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Saturday") {
+                if (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Saturday"){
+                    $sekarangx = "Sabtu";
+                }else if ((date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday"))
+                {
+                 $sekarangx = "Minggu";   
+                }else
+                {
+                 $sekarangx = date("l");   
+                }
+                
+                echo "Maaf Tidak Bisa Absen Dikarenakan Sekarang Adalah Hari ".$sekarangx." Yaitu Hari Libur Akhir Pekan";
+                    
+                }else
+                {
+                    
+            //hapus tanda backslah dari bawah ini
+        //     $sx1 = $jarak1;
+        //     $sx2 = $jarak2;
+        //     $jdx1 = strlen($sx1);
+        //     $jdx2 = strlen($sx2);
+                    
+        //             if($jdx1 > 11 || $jdx2 > 11)
+        //     {
+        //         echo "Maaf Terdeteksi Pengacauan Sistem , Akan Menjalankan Sistem Machine Learning Untuk Meninjau Data Anda";
+                
+        //          $queryx  ="SELECT * FROM employees WHERE id='$row_u[id]'";
+        // $resultx = $connection->query($queryx);
+        // $rowx = $resultx->fetch_assoc();
+        //   if($resultx->num_rows > 0){
+        //       $dtawalan = $rowx['employees_code'];
+        //       $dtakhir = 'XY-' . $dtawalan;
+        //   }
+          
+        //   $sgz = explode("-", $dtawalan);
+          
+        //   if ($sgz[0] == 'XY')
+        //   {
+              
+        //   }else
+        //   {
+        //     $update ="UPDATE employees SET employees_code='$dtakhir' WHERE id='$row_u[id]'";
+        //       if($connection->query($update) === false) {
+        //           die($connection->error.__LINE__); 
+        //           echo'Sepetinya sitem kami sedang error!';
+        //       } else{
+        //           //echo $dtakhir;
+        //       }  
+        //   }
+                
+        //     }else
+        //     {
+                $filename =''.seo_title($row_user['employees_name']).'-in-'.$date.'-'.$row_user['id'].'.jpg';
+      		$directory= "../content/present/".$filename;
+          $add ="INSERT INTO presence (employees_id,
+                            presence_date,
+                            time_in,
+                            time_out,
+                            picture_in,
+                            picture_out,
+                            present_id,
+                            presence_address,
+                            information) values('$row_u[id]',
+                            '$date',
+                            '$time',
+                            '00:00:00',
+                            '$filename',
+                            '', /*picture out kosong*/
+                            '1', /*hadir*/
+                            '$latitude',
+                            'WFH')";
+                  
+          if($connection->query($add) === false) { 
+              die($connection->error.__LINE__); 
+              echo'Sepertinya Sistem Kami sedang error!';
+          } else{
+              echo'success/Selamat Anda berhasil Absen Masuk pada Tanggal '.tanggal_ind($date).' dan Jam : '.$time.', Semangat bekerja "'.$row_u['employees_name'].'" !';
+              imagejpeg($tmp,$directory,80);
+        }
+            //sampai bawah ini
+            //}
+                    
+        	
+        }
+        }
+      }
+            
+        }
+        else
+        {
+           if($latitude == '' || $latitude == null)
+        {
+            echo "Posisi Anda Tidak Terdeteksi, Silahkan Aktifkan GPS Dan restart Applikasi!";
+        }else if ($meter >= 250000)
+        {
+            // var_dump("Anda Tidak Berada Diwilayah Absen, Jarak Anda ".$meter." Meter");
+            // die;
+               if ($meter > 1000)
+            {
+                echo "Anda Tidak Berada Diwilayah Absen (WFH Yaitu Max 250 KM), Jarak Anda ".($meter / 1000)." KM";
+            }else
+            {
+               echo "Anda Tidak Berada Diwilayah Absen (WFH Yaitu Max 250 KM), Jarak Anda ".$meter." Meter"; 
+            }
+        }
+        else
+        {
+            $gettimes = explode(":" , $time);
+                $gettimesy = $gettimes[0];
+                $gettimesz = $gettimes[1];
+                $gettimers = $gettimesy . ''. $gettimesz;
+                $dtsx = "0600";
+                
+                // if (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Tuesday") {
+                //     echo "sekarang hari selasa";
+                    
+                // }
+                // else
+                // {
+                //     echo "Bukan Hari Selasa";
+                // }
+                // if ((date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday")||date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Saturday") {
+                    
+                // }
+        //
+        if ($gettimers < 600 )
+        // if ($gettimers < 0600 )
+        {
+                    echo "Belum Waktunya Absen Masuk!, Absen Masuk Bisa Dilakukan Mulai Pukul 06:00 WIB";
+        }else
+        {
+            $sx1 = $jarak1;
+            $sx2 = $jarak2;
+            $jdx1 = strlen($sx1);
+            $jdx2 = strlen($sx2);
+
+            $CheckPlaces = $sx2 . ",". $sx1;
+
+            // $url = "https://api.mapbox.com/geocoding/v5/mapbox.places/$CheckPlaces.json?types=place&access_token=pk.eyJ1IjoiZnl0b2tvIiwiYSI6ImNrcms0cnI5cDBkNzYyb285M2c4Mm0xbHcifQ.cFwLjER_o_zBmvCclZrlNg";
+
+            // $curl = curl_init($url);
+            // curl_setopt($curl, CURLOPT_URL, $url);
+            // curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+            // //for debug only!
+            // curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+            // curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+
+            // $resp = curl_exec($curl);
+            // curl_close($curl);
+            // //var_dump($resp);
+
+            // $dt = json_decode($resp, TRUE);
+
+            // $city = $dt["features"][0]["text"];
+            // $Provence = $dt["features"][0]["context"][0]["text"];
+            $CLockCityX = strtolower($LockCityX);
+            //     $Ccity = strtolower($city);
+                if ($CLockCityX !=""){
+                
+
+            if ((date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday")||date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Saturday") {
+                if (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Saturday"){
+                    $sekarangx = "Sabtu";
+                }else if ((date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday"))
+                {
+                 $sekarangx = "Minggu";   
+                }else
+                {
+                 $sekarangx = date("l");   
+                }
+                
+                echo "Maaf Tidak Bisa Absen Dikarenakan Sekarang Adalah Hari ".$sekarangx." Yaitu Hari Libur Akhir Pekan";
+                    
+                }else
+                {
+                    
+            //hapus tanda backslah dari bawah ini
+        //     $sx1 = $jarak1;
+        //     $sx2 = $jarak2;
+        //     $jdx1 = strlen($sx1);
+        //     $jdx2 = strlen($sx2);
+                    
+        //             if($jdx1 > 11 || $jdx2 > 11)
+        //     {
+        //         echo "Maaf Terdeteksi Pengacauan Sistem , Akan Menjalankan Sistem Machine Learning Untuk Meninjau Data Anda";
+                
+        //          $queryx  ="SELECT * FROM employees WHERE id='$row_u[id]'";
+        // $resultx = $connection->query($queryx);
+        // $rowx = $resultx->fetch_assoc();
+        //   if($resultx->num_rows > 0){
+        //       $dtawalan = $rowx['employees_code'];
+        //       $dtakhir = 'XY-' . $dtawalan;
+        //   }
+          
+        //   $sgz = explode("-", $dtawalan);
+          
+        //   if ($sgz[0] == 'XY')
+        //   {
+              
+        //   }else
+        //   {
+        //     $update ="UPDATE employees SET employees_code='$dtakhir' WHERE id='$row_u[id]'";
+        //       if($connection->query($update) === false) {
+        //           die($connection->error.__LINE__); 
+        //           echo'Sepetinya sitem kami sedang error!';
+        //       } else{
+        //           //echo $dtakhir;
+        //       }  
+        //   }
+                
+        //     }else
+        //     {
+                $filename =''.seo_title($row_user['employees_name']).'-in-'.$date.'-'.$row_user['id'].'.jpg';
+      		$directory= "../content/present/".$filename;
+          $add ="INSERT INTO presence (employees_id,
+                            presence_date,
+                            time_in,
+                            time_out,
+                            picture_in,
+                            picture_out,
+                            present_id,
+                            presence_address,
+                            information) values('$row_u[id]',
+                            '$date',
+                            '$time',
+                            '00:00:00',
+                            '$filename',
+                            '', /*picture out kosong*/
+                            '1', /*hadir*/
+                            '$latitude',
+                            'WFH')";
+                  
+          if($connection->query($add) === false) { 
+              die($connection->error.__LINE__); 
+              echo'Sepertinya Sistem Kami sedang error!';
+          } else{
+              echo'success/Selamat Anda berhasil Absen Masuk pada Tanggal '.tanggal_ind($date).' dan Jam : '.$time.', Semangat bekerja "'.$row_u['employees_name'].'" !';
+              imagejpeg($tmp,$directory,80);
+        }
+            //sampai bawah ini
+            //}
+                    
+        	
+        }
+    }else{
+        //echo "Maaf Anda Sedang Berada Diluar Kota ($city), Harap Kembali Ke Kota Anda Yaitu $LockCityX";
+        echo "Maaf Anda Terdeteksi Berada Diwilayah $city, Harap Kembali Ke Kota Tempat Anda Bekerja Yaitu $LockCityX";
+        //echo "Maaf Anda Terdeteksi Berada Diluar Kota, Anda Sekarang Berada Dikota $city. Harap Kembali Ke Kota Tempat Bekerja Anda Yaitu $LockCityX";
+    }
+        }
+      } 
+        }
+        
+        
+      } 
+
+  }
+  else{
+    // Jika user tidak ditemukan
+    echo'User tidak ditemukan';die($connection->error.__LINE__); 
+  }
+ 
+break;
+// ----------- UPDATE PROFILE -------------------//
+case 'profile':
+  $error = array();
+
+  if (empty($_POST['employees_name'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $employees_name= mysqli_real_escape_string($connection, $_POST['employees_name']);
+  }
+
+//   if (empty($_POST['position_id'])) {
+//       $error[] = 'tidak boleh kosong';
+//     } else {
+//       $position_id = mysqli_real_escape_string($connection, $_POST['position_id']);
+//   }
+
+//   if (empty($_POST['shift_id'])) {
+//       $error[] = 'tidak boleh kosong';
+//     } else {
+//       $shift_id = mysqli_real_escape_string($connection, $_POST['shift_id']);
+//   }
+
+//   if (empty($_POST['building_id'])) {
+//       $error[] = 'tidak boleh kosong';
+//     } else {
+//       $building_id = mysqli_real_escape_string($connection, $_POST['building_id']);
+//   }
+
+  if (empty($_POST['bidang'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $bidang = mysqli_real_escape_string($connection, $_POST['bidang']);
+  }
+  
+  if (empty($_POST['alamat'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $alamat = mysqli_real_escape_string($connection, $_POST['alamat']);
+  }
+  
+  if (empty($_POST['nohp'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $nohp = mysqli_real_escape_string($connection, $_POST['nohp']);
+  }
+  
+  if (empty($_POST['jk'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $jk = mysqli_real_escape_string($connection, $_POST['jk']);
+  }
+  
+  if (empty($_POST['tglhr'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $tglhr = mysqli_real_escape_string($connection, $_POST['tglhr']);
+  }
+
+
+  if (empty($error)) { 
+    // $update="UPDATE employees SET employees_name='$employees_name',
+    //         position_id='$position_id',
+    //         shift_id='$shift_id',
+    //         building_id='$building_id',nohp='$nohp',jk='$jk',tglhr='$tglhr' WHERE id='$row_user[id]'"; 
+    
+     $update="UPDATE employees SET employees_name='$employees_name',
+           nohp='$nohp',
+           jk='$jk',
+           tglhr='$tglhr',
+           alamat='$alamat',
+           bidang='$bidang' WHERE id='$row_user[id]'"; 
+    
+    if($connection->query($update) === false) { 
+        die($connection->error.__LINE__); 
+        echo'Data tidak berhasil disimpan!';
+    } else{
+        echo'success';
+    }}
+    else{           
+        echo'Bidang inputan tidak boleh ada yang kosong..!';
+  }
+break;
+
+
+// ----------- UPDATE PASSWORD -------------------//
+case 'update-password':
+ $error = array();
+  if (empty($_POST['employees_email'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $employees_email= mysqli_real_escape_string($connection,$_POST['employees_email']);
+  }
+
+  if (empty($_POST['employees_password'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $employees_password= mysqli_real_escape_string($connection,$_POST['employees_password']);
+      $password_baru =mysqli_real_escape_string($connection,hash('sha256',$salt.$employees_password));
+  }
+
+  if (empty($error)) { 
+    $pesan = '<html lang="id-ID" xml:lang="id-ID"><body>';
+    $pesan .= 'Saat ini ['.$employees_email.'] Sedang mengganti Password baru<br>';
+    $pesan .= '<b>Password Baru Anda : '.$employees_password.'</b><br><br><br>Harap simpan baik-baik akun Anda.<br><br>';
+    $pesan .= 'Hormat Kami,<br>'.$site_name.'<br>Email otomatis, Mohon tidak membalas email ini"';
+    $pesan .= "</body></html>";
+    $to     = $email_siswa;
+    $subject = 'Ubah Katasandi Baru';
+    $headers = "From: " . $site_name." <".$site_email_domain.">\r\n";
+    $headers .= "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+
+    $update="UPDATE employees SET employees_password='$password_baru' WHERE id='$id'"; 
+    if($connection->query($update) === false) { 
+        die($connection->error.__LINE__); 
+        echo'Data tidak berhasil disimpan!';
+    } else{
+        echo'success';
+        mail($to, $subject, $pesan, $headers);
+    }}
+    else{           
+        echo'Bidang inputan tidak boleh ada yang kosong..!';
+    }
+break;
+
+/* -------- UPDATE PHOTO ----------------*/
+case 'update-photo':
+  $file_name   = $_FILES['file'] ['name'];
+  $size        = $_FILES['file'] ['size'];
+  $error       = $_FILES['file'] ['error'];
+  $tmpName     = $_FILES['file']['tmp_name'];
+  $filepath      = '../content/karyawan/';
+  $valid       = array('jpg','png','gif','jpeg'); 
+  if(strlen($file_name)){   
+       // Perintah untuk mengecek format gambar
+       list($txt,$ext) = explode(".", $file_name);
+       $file_ext = substr($file_name, strripos($file_name, '.'));
+
+       if(in_array($ext,$valid)){   
+         if($size< (15 * 1048576)){   
+           // Perintah pengganti nama files
+           //$photo_new   = strip_tags(md5($file_name));
+           $photo_new   =''.$row_user['employees_code'].'-'.strip_tags(md5($file_name)).'-'.seo_title($time).'-'.$file_ext.'';
+           $pathFile    = $filepath.$photo_new;
+
+            $query = "SELECT photo FROM employees WHERE id='$row_user[id]'"; 
+                $result = $connection->query($query);
+                $rows= $result->fetch_assoc();
+                $photo = $rows['photo'];
+                if(file_exists("../content/$photo")){
+                  unlink( "../content/karyawan/$photo");
+                 }
+           $update ="UPDATE employees SET photo='$photo_new' WHERE id=$row_user[id]";
+            if($connection->query($update) === false) { 
+               echo'Pengaturan tidak dapat disimpan, coba ulangi beberapa saat lagi.!';
+               die($connection->error.__LINE__); 
+            } else   {
+              echo'success';
+               move_uploaded_file($tmpName, $pathFile);
+            }
+          }
+         else{ // Jika Gambar melebihi size 
+              echo'File terlalu besar maksimal files 15MB.!';  
+           }         
+       }
+       else{
+          echo 'File yang di unggah tidak sesuai dengan format, File harus jpg, jpeg, gif, png.!';
+        }
+     }   
+break;
+
+
+/* -------  LOAD DATA HISTORY ----------*/
+case 'history':
+if(isset($_POST['from']) OR isset($_POST['to'])){
+      $from = date('Y-m-d', strtotime($_POST['from']));
+      $to   = date('Y-m-d', strtotime($_POST['to']));
+      $awalx = date('m-Y', strtotime($_POST['from']));
+      $akhirx = date('m-Y', strtotime($_POST['to']));
+      $kbulan = date('m', strtotime($_POST['from']));
+      $ktahun = date('Y', strtotime($_POST['from']));
+      $jbulan = date('m', strtotime($_POST['to']));
+      $jtahun = date('Y', strtotime($_POST['to']));
+      $filter ="presence_date BETWEEN '$from' AND '$to'";
+  } 
+  else{
+      $filter ="MONTH(presence_date) ='$month'";
+      $awalx = $month . "-" . $year;
+      $akhirx = $month . "-" . $year;
+      $kbulan = $month;
+      $ktahun = $year;
+      $jbulan = $month;
+      $jtahun = $year;
+}
+
+echo'<table class="table rounded" id="swdatatable">
+    <thead>
+        <tr>
+            <th scope="col" class="align-middle text-center" width="10">No</th>
+            <th scope="col" class="align-middle">Tanggal</th>
+            <th scope="col" class="align-middle">Jam Masuk</th>
+            <th scope="col" class="align-middle">Jam Pulang</th>
+            <th scope="col" class="align-middle hidden-sm">Status</th>
+            <th scope="col" class="align-middle">Aksi</th>
+        </tr>
+    </thead>
+    <tbody>';
+    $no=0;
+    $query_shift ="SELECT time_in,time_out FROM shift WHERE shift_id='$row_user[shift_id]'";
+    $result_shift = $connection->query($query_shift);
+    $row_shift = $result_shift->fetch_assoc();
+    $shift_time_in = $row_shift['time_in'];
+    $newtimestamp = strtotime(''.$shift_time_in.' + 05 minute');
+    $newtimestamp = date('H:i:s', $newtimestamp);
+    $hitungmasuk=0;
+    $hitungpulang=0;
+    $hitungpulangx=0;
+    $hitungtelat=0;
+    $jadistatus = null;
+    $jadistatusx = null;
+    $jadistatusxy = null;
+    $totalTelat= 0;
+
+    $query_absen ="SELECT presence_id,presence_date,picture_in,time_in,picture_out,time_out,present_id,presence_address,information,TIMEDIFF(TIME(time_in),'$shift_time_in') AS selisih,if (time_in>'$shift_time_in','Terlambat',if(time_in='00:00:00','Tidak Masuk','Tepat Waktu')) AS status FROM presence WHERE employees_id='$row_user[id]' AND $filter ORDER BY presence_id DESC";
+    $result_absen = $connection->query($query_absen);
+    if($result_absen->num_rows > 0){
+        while ($row_absen = $result_absen->fetch_assoc()) {
+
+          $query_status ="SELECT present_name FROM  present_status WHERE present_id='$row_absen[present_id]'";
+          $result_status = $connection->query($query_status);
+          $row_aa= $result_status->fetch_assoc();
+            $no++;
+            if($row_absen['information']==''){
+              $information = '';
+            }else{
+              $information = '<br>'.$row_absen['information'].'';
+            }
+
+        $selisihwaktu = $row_absen['selisih'];
+
+      if($row_absen['status']=='Terlambat'){
+          $hitungmasuk++;
+          list($hh,$mm,$ss)= explode(':',$selisihwaktu);
+          $perhitungantelat = ($hh * 60)+($mm);
+          $totalTelat += $perhitungantelat;
+          $status=' <small class="badge badge-danger">Telat ('.$perhitungantelat.' Menit)</small>';
+        }
+        elseif ($row_absen['status']='Tepat Waktu') {
+            $hitungmasuk++;
+          $status=' <small class="badge badge-primary">'.$row_absen['status'].'</small>';
+        }
+        else{
+          $status=' <small class="badge badge-danger">Tidak Masuk</small>';
+        }
+        
+        if ($row_absen['time_out'] == '00:00:00'){
+            $hitungpulangx++;
+            $xstatus = ' <small class="badge badge-danger">Tidak Presensi</small>';
+        }else
+        {
+            $hitungpulang++;
+            $xstatus = ' <small class="badge badge-success">Presensi</small>';
+        }
+        
+        echo'
+        <tr>
+            <th class="text-center">'.$no.'</th>
+            <th scope="row">'.tgl_ind($row_absen['presence_date']).'</th>
+            <td><a class="image-link" href="./content/present/'.$row_absen['picture_in'].'">
+            <span class="badge badge-primary">'.$row_absen['time_in'].'</span></a>'.$status.'</td>
+            <td><a class="image-link" href="./content/present/'.$row_absen['picture_out'].'">
+            <span class="badge badge-success">'.$row_absen['time_out'].'</span></a>'.$xstatus.'</td>
+            <td class="hidden-sm">'.$row_aa['present_name'].''.$status.''.$information.'</td>
+            <td class="text-center">
+              <button type="button" class="btn btn-success btn-sm modal-update" data-id="'.$row_absen['presence_id'].'" data-masuk="'.$row_absen['time_in'].'" data-pulang="'.$row_absen['time_out'].'" data-date="'.tgl_indo($row_absen['presence_date']).'" data-information="'.$row_absen['information'].'" data-status="'.$row_absen['present_id'].'" data-toggle="modal" data-target="#modal-show"><i class="fas fa-pencil-alt"></i></button>
+            </td>
+        </tr>';
+    }}
+    echo'
+    </tbody>
+</table>
+<hr>';
+      $query_hadir="SELECT presence_id FROM presence WHERE employees_id='$row_user[id]' AND $filter AND present_id='1' ORDER BY presence_id DESC";
+      $hadir= $connection->query($query_hadir);
+
+      $query_sakit="SELECT presence_id FROM presence WHERE employees_id='$row_user[id]' AND $filter AND present_id='2' ORDER BY presence_id";
+      $sakit = $connection->query($query_sakit);
+
+      $query_izin="SELECT presence_id FROM presence WHERE employees_id='$row_user[id]' AND $filter AND present_id='3' ORDER BY presence_id";
+      $izin = $connection->query($query_izin);
+
+      $query_telat ="SELECT presence_id FROM presence WHERE employees_id='$row_user[id]' AND $filter AND time_in>'$shift_time_in'";
+      $telat = $connection->query($query_telat);
+      
+      $FILTERLBR1 = '%' . $awalx;
+      $FILTERLBR2 = '%' . $akhirx;
+      $ttlLBR = 0;
+      $query1 = "SELECT * FROM libur_kerja WHERE tanggal_libur LIKE '$FILTERLBR1' OR tanggal_libur LIKE '$FILTERLBR2'";
+$result1 = $connection->query($query1);
+  if($result1->num_rows > 0){
+      while ($row1= $result1->fetch_assoc()) {
+          $ttlLBR += $row1['lama_libur'];
+          //echo $ttlLBR;
+      }
+  }
+  
+  if ($kbulan == $jbulan){
+      $WeekDay = (countWork($ktahun,$kbulan,array(0,6)) - $ttlLBR);
+      $bblnx = ambilbulan($kbulan);
+  }else{
+      
+      $bnykUlang = $jbulan - $kbulan;
+      
+      for($i=0;$i <= $bnykUlang;$i++){
+          $blnGts = $kbulan + $i;
+          $WeekDay += (countWork($jtahun,$blnGts,array(0,6)) - $ttlLBR);
+      }
+      
+      //$WeekDay = (countWork($ktahun,$kbulan,array(0,6)) - $ttlLBR);
+      //$WeekDay += (countWork($jtahun,$jbulan,array(0,6)) - $ttlLBR);
+      $bblnx = ambilbulan($kbulan) . " s/d " . ambilbulan($jbulan);
+  }
+      
+      
+echo'
+<div class="container">
+<div class="row">
+  <div class="col-md-1">
+    <p>Hadir : <span class="badge badge-success">'.$hadir->num_rows.' Hari</span></p>
+  </div>
+  
+  <div class="col-md-1">
+    <p>Tidak Hadir : <span class="badge badge-danger">'.((($WeekDay - ($hadir->num_rows)) - $sakit->num_rows) - $izin->num_rows).' Hari</span></p>
+  </div>
+
+  <div class="col-md-1">
+    <p>Sakit : <span class="badge badge-warning">'.$sakit->num_rows.' Hari</span></p>
+  </div>
+
+  <div class="col-md-1">
+    <p>Izin : <span class="badge badge-info">'.$izin->num_rows.' Hari</span></p>
+  </div>
+  
+  <div class="col-md-1">
+    <p>Telat : <span class="label badge badge-danger">'.$telat->num_rows.' Kali</span></p>
+  </div>';
+  
+  
+  //$hari
+  
+  $hitungtelat = $telat->num_rows;
+  $stsx = null;
+  $stsy = null;
+  $stsz = null;
+ 
+  $persentasex = ($hari  * 0.6);
+  $hhds = $hadir->num_rows;
+  $persentasez = ($hhds  * 0.3);
+  $persentasey = (($hhds / $WeekDay) * 100);
+  
+  $dtsx = ($hitungpulangx / $hhds)*100;
+  
+   if($hitungpulangx >= 5){
+      $jadistatusx = '('.number_format($dtsx,0).'% ) Kurang Disiplin';
+      $stsx = 'badge-danger';
+  }else{
+      $jadistatusx = '('.number_format($persentasey,0).'% ) Disiplin';
+      $stsx = 'badge-success';
+  }
+  
+  $perkiraan = 100 -  ($dtsx + $persentasez);
+  
+  if(($persentasex <= $hhds) && ($persentasez >= $hitungtelat) && ($hitungpulangx <=1)){
+      $stsy = '( '.number_format($perkiraan,0).'% ) Pegawai Sangat Rajin';
+      $stsz = 'badge-success';
+  }else if(($persentasex <= $hhds) && ($hitungpulangx <=3)){
+       $stsy = '( '.number_format($perkiraan,0).'% ) Pegawai Rajin';
+      $stsz = 'badge-info';
+      }else{
+      $stsy = '( '.number_format($perkiraan,0).'% ) Pegawai Kurang Rajin';
+      //(Tidak Presensi Pulang : '.number_format($dtsx,0).'% )
+      $stsz = 'badge-danger';
+  }
+  
+  echo '<div class="col-md-1">
+    <p>Hari Kerja Bulan '.$bblnx.' : <span class="badge badge-info">'.$WeekDay.' Hari</span></p>
+  </div>
+  
+  <div class="col-md-1">
+    <p>Libur Bulan '.$bblnx.' : <span class="badge badge-info">'.$ttlLBR.' Hari</span></p>
+  </div>
+  
+  
+  <div class="col-md-1">
+    <p>Kehadiran : <span class="badge '.$stsx.'">'.$jadistatusx.'</span></p>
+  </div>
+  
+  <div class="col-md-1">
+    <p>Predikat : <span class="badge '.$stsz.'">'.$stsy.'</span></p>
+  </div>';
+  
+  $initTelat = ($totalTelat * 60);
+  $keJam = floor($initTelat / 3600);
+  $keMenit = floor(($initTelat / 60) % 60);
+  $keDetik = $initTelat % 60;
+  
+  $konversiTelatx = $keJam . " Jam " . $keMenit . " Menit ";
+  $tidakhadir = $WeekDay - $hadir->num_rows;
+  $TelatDalamHari = ($totalTelat / 60) / 8;
+  
+  echo '<div class="col-md-1">
+    <p>Total Telat : <span class="badge badge-warning">'.$konversiTelatx.' ( Dalam Hari : '.floor(number_format($TelatDalamHari,1)).' Hari)</span></p>
+  </div>';
+  
+  
+  
+  echo '<div class="col-md-1">
+    <p>Total Pinalti : <span class="badge badge-info">'.(floor(number_format($TelatDalamHari,1)) + $tidakhadir ).' Hari Presensi</span></p>
+  </div>
+  
+</div>
+</div>';?>
+
+<script>
+  $('#swdatatable').dataTable({
+    "iDisplayLength":35,
+    "aLengthMenu": [[35, 40, 50, -1], [35, 40, 50, "All"]]
+  });
+  $('.image-link').magnificPopup({type:'image'});
+</script>
+<?php
+  break;
+
+
+// ----------- UPDATE HISTORY -------------------//
+case 'update-history':
+  $error = array();
+  if (empty($_POST['presence_id'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $presence_id = mysqli_real_escape_string($connection, $_POST['presence_id']);
+  }
+
+ /* if (empty($_POST['time_in'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $time_in= mysqli_real_escape_string($connection, $_POST['time_in']);
+  }
+
+  if (empty($_POST['time_out'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $time_out= mysqli_real_escape_string($connection, $_POST['time_out']);
+  }*/
+
+
+  if (empty($_POST['present_id'])) {
+      $error[] = 'tidak boleh kosong';
+    } else {
+      $present_id= mysqli_real_escape_string($connection, $_POST['present_id']);
+  }
+
+  $information = mysqli_real_escape_string($connection, $_POST['information']);
+ 
+  if (empty($error)) { 
+    $update="UPDATE presence SET present_id='$present_id',
+                    information='$information' WHERE presence_id='$presence_id' AND employees_id='$row_user[id]'"; 
+    if($connection->query($update) === false) { 
+        die($connection->error.__LINE__); 
+        echo'Data tidak berhasil disimpan!';
+    } else{
+        echo'success';
+    }}
+    else{           
+        echo'Bidang inputan tidak boleh ada yang kosong..!';
+  }
+break;
+
+}
+
+
+?>

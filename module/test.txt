@@ -1,0 +1,31 @@
+CREATE TABLE `link_nilai` (
+  `id_link` int(11) NOT NULL,
+  `employees_id` varchar(20) NOT NULL,
+  `position_id` varchar(20) NOT NULL,
+  `user1` varchar(20) NOT NULL,
+  `user2` varchar(20) NOT NULL,
+  `user3` varchar(20) NOT NULL,
+  `tot` varchar(20) NOT NULL,
+  `nilai1` varchar(50) NOT NULL,
+  `nilai2` varchar(50) NOT NULL,
+  `nilai3` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+ALTER TABLE `link_nilai`
+  ADD PRIMARY KEY (`id_link`);
+  
+  ALTER TABLE `link_nilai`
+  MODIFY `id_link` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=0;
+  
+  CREATE TABLE `randem` (
+  `id_randem` int(11) NOT NULL,
+  `employees_id` varchar(20) NOT NULL,
+  `position_id` varchar(20) NOT NULL,
+  `countx` varchar(20) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+ALTER TABLE `randem`
+  ADD PRIMARY KEY (`id_randem`);
+  
+  ALTER TABLE `randem`
+  MODIFY `id_randem` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=0;

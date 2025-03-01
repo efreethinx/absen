@@ -1,0 +1,30 @@
+[24-Sep-2021 22:30:26 Asia/Jakarta] PHP Deprecated:  The behavior of unparenthesized expressions containing both '.' and '+'/'-' will change in PHP 8: '+'/'-' will take a higher precedence in /home/skea6737/public_html/presensi/admin/mod/absensi/print.php on line 264
+[05-Jan-2022 20:47:18 Asia/Jakarta] PHP Deprecated:  The behavior of unparenthesized expressions containing both '.' and '+'/'-' will change in PHP 8: '+'/'-' will take a higher precedence in /home/skea6737/public_html/presensi/admin/mod/absensi/proses.php on line 291
+[26-Jan-2022 14:32:33 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php:22
+Stack trace:
+#0 {main}
+  thrown in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php on line 22
+[26-Jan-2022 14:32:35 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php:22
+Stack trace:
+#0 {main}
+  thrown in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php on line 22
+[26-Jan-2022 14:33:00 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php:22
+Stack trace:
+#0 {main}
+  thrown in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php on line 22
+[26-Jan-2022 14:33:26 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php:22
+Stack trace:
+#0 {main}
+  thrown in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php on line 22
+[26-Jan-2022 14:48:29 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php:23
+Stack trace:
+#0 {main}
+  thrown in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php on line 23
+[26-Jan-2022 14:48:42 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php:23
+Stack trace:
+#0 {main}
+  thrown in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php on line 23
+[26-Jan-2022 14:49:34 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php:23
+Stack trace:
+#0 {main}
+  thrown in /home/skea6737/public_html/absensi/admin/mod/absensi/map.php on line 23
