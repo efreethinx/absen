@@ -48,7 +48,7 @@ order allow,deny
 allow from all
 </Files>
 
-deny from 114.79.6.114
+#deny from 114.79.6.114
 
 # php -- BEGIN cPanel-generated handler, do not edit
 # Set the “ea-php74” package as the default “PHP” programming language.

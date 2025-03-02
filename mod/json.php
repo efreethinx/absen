@@ -1,5 +1,5 @@
-<?php 
-	/*$data[] = $_POST['myData'];
+<?php
+/*$data[] = $_POST['myData'];
 	if( $data != null)
 	{
 		$inp = file_get_contents('neural.json');
@@ -11,16 +11,14 @@
 		file_put_contents('neural.json', $an);
 	}*/
 
-	$data = $_POST['myData'];
-	$json = file_get_contents('https://absensi.leuwimunding.my.id/neural');
+$data = $_POST['myData'];
+$json = file_get_contents('localhost/neural'); //$json = file_get_contents('https://absensi.leuwimunding.my.id/neural');
 
-	if(strlen($json) > 2){
-		$string = ',' . $data; 
-	}
-	else{
-		$string = $data;
-	}
-	$position = strlen($json) - 1; 
-	$out = substr_replace( $json, $string, $position, 0 ); 
-	file_put_contents('https://absensi.leuwimunding.my.id/neural', $out);
-?> 
+if (strlen($json) > 2) {
+	$string = ',' . $data;
+} else {
+	$string = $data;
+}
+$position = strlen($json) - 1;
+$out = substr_replace($json, $string, $position, 0);
+file_put_contents('localhost/neural', $out); //file_put_contents('https://absensi.leuwimunding.my.id/neural', $out);

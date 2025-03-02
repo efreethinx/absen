@@ -1,42 +1,42 @@
-<?php 
-if ($mod ==''){
+<?php
+if ($mod == '') {
     header('location:../404');
-    echo'kosong';
-}else{
+    echo 'kosong';
+} else {
     include_once 'mod/sw-header.php';
     // var_dump($_COOKIE['COOKIES_MEMBER']);
     // die;
-if(!isset($_COOKIE['COOKIES_MEMBER'])){
+    if (!isset($_COOKIE['COOKIES_MEMBER'])) {
 
-$query = mysqli_query($connection, "SELECT max( employees_code) as kodeTerbesar FROM employees");
-$data = mysqli_fetch_array($query);
-$kode_karyawan = $data['kodeTerbesar'];
-$urutan = (int) substr($kode_karyawan, 3, 3);
-$urutan++;
-$huruf = "OM";
-$kode_karyawan = $huruf . sprintf("%03s", $urutan);
+        $query = mysqli_query($connection, "SELECT max( employees_code) as kodeTerbesar FROM employees");
+        $data = mysqli_fetch_array($query);
+        $kode_karyawan = $data['kodeTerbesar'];
+        $urutan = (int) substr($kode_karyawan, 3, 3);
+        $urutan++;
+        $huruf = "OM";
+        $kode_karyawan = $huruf . sprintf("%03s", $urutan);
 
-// $VersiAPP = $_GET['app'];
-        
-//         if ($VersiAPP == '2.7')
-//         {
-           
-//         }else
-//         {
-//           echo '<script>alert("Applikasi Presensi Skensala Anda Adalah Versi Lama, Silahkan Update Ke Versi Terbaru Yaitu Versi 2.7")
-//           window.location.href = "https://link.skensala.my.id/PRESENSI";
-//           </script>'; 
-           
-           
-//         }
+        // $VersiAPP = $_GET['app'];
 
- echo'
+        //         if ($VersiAPP == '2.7')
+        //         {
+
+        //         }else
+        //         {
+        //           echo '<script>alert("Applikasi Presensi Skensala Anda Adalah Versi Lama, Silahkan Update Ke Versi Terbaru Yaitu Versi 2.7")
+        //           window.location.href = "https://link.skensala.my.id/PRESENSI";
+        //           </script>'; 
+
+
+        //         }
+
+        echo '
  
  <!-- App Capsule -->
     <div id="appCapsule">
         <div style="background:#007bff;border-radius:30px;margin:0 16px;padding:10px 15px" class="section text-center">
             <!--<h1 style="color:#FFFFFF;font-size:24px;"><i class="fa fa-user"></i> Login</h1>--!>
-            <img src="'.$site_url.'/content/'.$site_logo.'" height="70">
+            <img src="' . $site_url . '/content/' . $site_logo . '" height="70">
             <h2 style="color:#FFFFFF;">Aplikasi Absensi Kehadiran Pegawai</h2>
         </div>
         <div class="section mb-5 p-2">
@@ -89,12 +89,11 @@ $kode_karyawan = $huruf . sprintf("%03s", $urutan);
     Developed by <a href="https://skensala.my.id/" rel="dofollow" target="_blank">FyOs</a> - <a href="https://skensala.my.id/" rel="dofollow" target="_blank">FyTeam</a> - <a class="credits" href="https://skensala.my.id" rel="nofollow" target="_blank">SKENSALA</a>
   </footer>
     <!-- * App Capsule -->';
-    // var_dump($_COOKIE['COOKIES_MEMBER']);
-    // // die;
-}
-  else{
-      header('location:./home');
-  }
+        // var_dump($_COOKIE['COOKIES_MEMBER']);
+        // // die;
+    } else {
+        header('location:./home');
+    }
 
-  include_once 'mod/sw-footer.php';
-} ?>
+    include_once 'mod/sw-footer.php';
+}
