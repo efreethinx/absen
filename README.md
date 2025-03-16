@@ -27,3 +27,6 @@ CustomLog ${APACHE_LOG_DIR}/access.log combined
 Switch:
 sudo a2ensite absen.conf
 sudo a2dissite 000-default.conf
+
+user: kurikulum@gmail.com
+pass: 654321
